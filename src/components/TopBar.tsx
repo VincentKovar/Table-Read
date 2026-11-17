@@ -22,7 +22,7 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-8 px-6 py-3.5">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-8 px-4 py-3.5 sm:px-6">
         <a
           href="#manuscript"
           onClick={(e) => {
@@ -44,6 +44,7 @@ export function TopBar({
               <button
                 key={item.id}
                 type="button"
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => onSelectSection(item.id)}
                 className={`relative py-1 text-sm font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 rounded-sm ${
                   isActive
@@ -74,6 +75,31 @@ export function TopBar({
           </button>
         </div>
       </div>
+
+      {/* Mobile workspace section switcher (non-overflowing single row) */}
+      <nav
+        aria-label="Mobile sections"
+        className="flex md:hidden items-center gap-1 overflow-x-auto border-t border-zinc-100 px-4 py-2"
+      >
+        {NAV_ITEMS.map((item) => {
+          const isActive = activeSection === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-current={isActive ? 'page' : undefined}
+              onClick={() => onSelectSection(item.id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                isActive
+                  ? 'bg-zinc-900 text-white'
+                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
     </header>
   );
 }

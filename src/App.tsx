@@ -27,6 +27,7 @@ import { ManuscriptView } from './components/ManuscriptView';
 import { TransportPanel } from './components/TransportPanel';
 import { CastPanel } from './components/CastPanel';
 import { ExportPanel } from './components/ExportPanel';
+import { SamplesView } from './components/SamplesView';
 import { ScriptEditorModal } from './components/ScriptEditorModal';
 
 function makeCacheKey(
@@ -751,10 +752,7 @@ export default function App() {
 
   const handleSelectNavSection = (section: WorkspaceSection) => {
     setActiveSection(section);
-    const el = document.getElementById(section);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const activeBlock = useMemo(
@@ -770,6 +768,26 @@ export default function App() {
     () => formatBlocksToRawScript(blocks, scriptTitle),
     [blocks, scriptTitle]
   );
+
+  const handleVoiceChange = (character: string, voiceName: VoiceName) => {
+    setCastProfiles((prev) => ({
+      ...prev,
+      [character]: {
+        ...prev[character],
+        voiceName,
+      },
+    }));
+  };
+
+  const handlePersonaChange = (character: string, persona: string) => {
+    setCastProfiles((prev) => ({
+      ...prev,
+      [character]: {
+        ...prev[character],
+        persona,
+      },
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F7F8] text-[#111318]">
@@ -804,46 +822,101 @@ export default function App() {
         )}
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* Left 7/12 (or 8/12) Manuscript Column */}
+          {/* Left 8/12 Active Workspace View */}
           <div className="lg:col-span-8">
-            <ManuscriptView
-              title={scriptTitle}
-              onChangeTitle={setScriptTitle}
-              blocks={blocks}
-              castProfiles={castProfiles}
-              includeStageDirections={includeStageDirections}
-              onToggleStageDirections={setIncludeStageDirections}
-              activeBlockId={activeBlockId}
-              isPlaying={playbackStatus === 'playing'}
-              synthesizingBlockIds={synthesizingBlockIds}
-              audioCache={audioCache}
-              getBlockCacheKey={getBlockCacheKey}
-              onPlayLine={handlePlayLine}
-              onRegenerateLine={handleRegenerateLine}
-              onUpdateBlockEmotion={(blockId, emotion) =>
-                setBlocks((prev) =>
-                  prev.map((b) => (b.id === blockId ? { ...b, emotion } : b))
-                )
-              }
-              onUpdateBlockText={(blockId, text) =>
-                setBlocks((prev) =>
-                  prev.map((b) => (b.id === blockId ? { ...b, text } : b))
-                )
-              }
-              onOpenPasteEditor={() => {
-                setEditorModalMode('paste');
-                setEditorModalOpen(true);
-              }}
-              onAutoTagEmotions={handleAutoTagEmotions}
-              isTaggingEmotions={isTaggingEmotions}
-              samples={SAMPLE_SCRIPTS}
-              activeSampleId={activeSampleId}
-              onSelectSample={handleSelectSample}
-              onClearScript={handleClearScript}
-            />
+            {activeSection === 'manuscript' && (
+              <ManuscriptView
+                title={scriptTitle}
+                onChangeTitle={setScriptTitle}
+                blocks={blocks}
+                castProfiles={castProfiles}
+                includeStageDirections={includeStageDirections}
+                onToggleStageDirections={setIncludeStageDirections}
+                activeBlockId={activeBlockId}
+                isPlaying={playbackStatus === 'playing'}
+                synthesizingBlockIds={synthesizingBlockIds}
+                audioCache={audioCache}
+                getBlockCacheKey={getBlockCacheKey}
+                onPlayLine={handlePlayLine}
+                onRegenerateLine={handleRegenerateLine}
+                onUpdateBlockEmotion={(blockId, emotion) =>
+                  setBlocks((prev) =>
+                    prev.map((b) => (b.id === blockId ? { ...b, emotion } : b))
+                  )
+                }
+                onUpdateBlockText={(blockId, text) =>
+                  setBlocks((prev) =>
+                    prev.map((b) => (b.id === blockId ? { ...b, text } : b))
+                  )
+                }
+                onOpenPasteEditor={() => {
+                  setEditorModalMode('paste');
+                  setEditorModalOpen(true);
+                }}
+                onAutoTagEmotions={handleAutoTagEmotions}
+                isTaggingEmotions={isTaggingEmotions}
+                samples={SAMPLE_SCRIPTS}
+                activeSampleId={activeSampleId}
+                onSelectSample={handleSelectSample}
+                onClearScript={handleClearScript}
+              />
+            )}
+
+            {activeSection === 'cast' && (
+              <CastPanel
+                variant="full"
+                castProfiles={castProfiles}
+                blocks={blocks}
+                includeStageDirections={includeStageDirections}
+                onToggleStageDirections={setIncludeStageDirections}
+                auditioningCharacter={auditioningCharacter}
+                onChangeVoice={handleVoiceChange}
+                onChangePersona={handlePersonaChange}
+                onAuditionCharacter={handleAuditionCharacter}
+                onBackToManuscript={() => handleSelectNavSection('manuscript')}
+              />
+            )}
+
+            {activeSection === 'samples' && (
+              <SamplesView
+                samples={SAMPLE_SCRIPTS}
+                activeSampleId={activeSampleId}
+                onLoadSample={(sampleId) => {
+                  handleSelectSample(sampleId);
+                  handleSelectNavSection('manuscript');
+                }}
+                onOpenPasteEditor={() => {
+                  setEditorModalMode('paste');
+                  setEditorModalOpen(true);
+                }}
+              />
+            )}
+
+            {activeSection === 'export' && (
+              <ExportPanel
+                variant="full"
+                scriptTitle={scriptTitle}
+                playableBlocks={playableBlocks}
+                audioCache={audioCache}
+                getBlockCacheKey={getBlockCacheKey}
+                pauseGapMs={pauseGapMs}
+                format={exportFormat}
+                onChangeFormat={setExportFormat}
+                totalPlayableLines={playableBlocks.length}
+                cachedLineCount={cachedCount}
+                estimatedDurationSeconds={estimatedDurationSeconds}
+                isExporting={isExporting}
+                exportProgress={exportProgress}
+                masterAudioUrl={masterAudioUrl}
+                masterFileName={masterFileName}
+                onExportAudio={handleExportAudio}
+                onExportScriptText={handleExportScriptText}
+                onBackToManuscript={() => handleSelectNavSection('manuscript')}
+              />
+            )}
           </div>
 
-          {/* Right 4/12 Studio Rail */}
+          {/* Right 4/12 Persistent Transport & Quick Controls Rail */}
           <aside className="flex flex-col gap-5 lg:col-span-4 lg:sticky lg:top-20">
             <TransportPanel
               status={playbackStatus}
@@ -870,44 +943,54 @@ export default function App() {
               analyserNode={analyserRef.current}
             />
 
-            <CastPanel
-              castProfiles={castProfiles}
-              includeStageDirections={includeStageDirections}
-              auditioningCharacter={auditioningCharacter}
-              onChangeVoice={(character, voiceName) =>
-                setCastProfiles((prev) => ({
-                  ...prev,
-                  [character]: {
-                    ...prev[character],
-                    voiceName,
-                  },
-                }))
-              }
-              onChangePersona={(character, persona) =>
-                setCastProfiles((prev) => ({
-                  ...prev,
-                  [character]: {
-                    ...prev[character],
-                    persona,
-                  },
-                }))
-              }
-              onAuditionCharacter={handleAuditionCharacter}
-            />
+            {activeSection === 'manuscript' && (
+              <>
+                <CastPanel
+                  variant="compact"
+                  castProfiles={castProfiles}
+                  includeStageDirections={includeStageDirections}
+                  auditioningCharacter={auditioningCharacter}
+                  onChangeVoice={handleVoiceChange}
+                  onChangePersona={handlePersonaChange}
+                  onAuditionCharacter={handleAuditionCharacter}
+                  onOpenFullCast={() => handleSelectNavSection('cast')}
+                />
 
-            <ExportPanel
-              format={exportFormat}
-              onChangeFormat={setExportFormat}
-              totalPlayableLines={playableBlocks.length}
-              cachedLineCount={cachedCount}
-              estimatedDurationSeconds={estimatedDurationSeconds}
-              isExporting={isExporting}
-              exportProgress={exportProgress}
-              masterAudioUrl={masterAudioUrl}
-              masterFileName={masterFileName}
-              onExportAudio={handleExportAudio}
-              onExportScriptText={handleExportScriptText}
-            />
+                <ExportPanel
+                  variant="compact"
+                  format={exportFormat}
+                  onChangeFormat={setExportFormat}
+                  totalPlayableLines={playableBlocks.length}
+                  cachedLineCount={cachedCount}
+                  estimatedDurationSeconds={estimatedDurationSeconds}
+                  isExporting={isExporting}
+                  exportProgress={exportProgress}
+                  masterAudioUrl={masterAudioUrl}
+                  masterFileName={masterFileName}
+                  onExportAudio={handleExportAudio}
+                  onExportScriptText={handleExportScriptText}
+                  onOpenFullExport={() => handleSelectNavSection('export')}
+                />
+              </>
+            )}
+
+            {activeSection === 'cast' && (
+              <ExportPanel
+                variant="compact"
+                format={exportFormat}
+                onChangeFormat={setExportFormat}
+                totalPlayableLines={playableBlocks.length}
+                cachedLineCount={cachedCount}
+                estimatedDurationSeconds={estimatedDurationSeconds}
+                isExporting={isExporting}
+                exportProgress={exportProgress}
+                masterAudioUrl={masterAudioUrl}
+                masterFileName={masterFileName}
+                onExportAudio={handleExportAudio}
+                onExportScriptText={handleExportScriptText}
+                onOpenFullExport={() => handleSelectNavSection('export')}
+              />
+            )}
           </aside>
         </div>
       </main>
