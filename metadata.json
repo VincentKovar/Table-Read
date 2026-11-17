@@ -1,0 +1,6 @@
+{
+  "name": "TableRead Studio",
+  "description": "Screenplay and play table read studio with multi-character Gemini TTS voices, per-line emotional direction, synchronized playback, script import, and MP3/WAV audio export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
